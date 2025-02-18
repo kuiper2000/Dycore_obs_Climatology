@@ -22,9 +22,13 @@ if [ $i -eq 0 ]; then
     mkdir warmstart_cp_HSt42_${L}
 	echo -n $space_day > HSt42_${L}/day_interval.txt
 	echo -n "None" > HSt42_${L}/firstday_file.txt                  # no file on the first day
+    cp "obs_theta/grid_Q1.dat" "grid_Q1.dat" 
+    cp "obs_theta/grid_t_eq.dat" "grid_t_eq.dat" 
 else
 	echo -n $space_day > HSt42_${L}/day_interval.txt
 	echo -n "warmstart_${L}.dat" > HSt42_${L}/firstday_file.txt    # using warm start file on the first day
+    cp "obs_theta/grid_Q1.dat" "grid_Q1.dat" 
+    cp "obs_theta/grid_t_eq.dat" "grid_t_eq.dat" 
 fi
 
 julia Run_HS.jl

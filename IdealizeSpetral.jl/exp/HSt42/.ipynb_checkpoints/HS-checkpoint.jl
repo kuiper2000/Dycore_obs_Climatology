@@ -1,7 +1,7 @@
 using JGCM
-
+using JLD2
 function Atmos_Spectral_Dynamics_Main(physcis_params::Dict{String, Float64}, obs_clim::Dict{String, Float64}, end_day::Int64 = 5, spinup_day::Int64 = 0, L::Float64 = L)
-    #obs_clim       = Dict{String,Float64}("obs_teq"=>1.0) 
+    # obs_clim       = Dict{String,Float64}("obs_teq"=>1.0) 
     # the decay of a sinusoidal disturbance to a zonally symmetric flow 
     # that resembles that found in the upper troposphere in Northern winter.
     name = "Spectral_Dynamics"
@@ -48,12 +48,7 @@ function Atmos_Spectral_Dynamics_Main(physcis_params::Dict{String, Float64}, obs
         init_step = true # => In leapfrog would do damping at initital time
     end
 
-    # mimic warm start to implement obs_clim
-    # if warm_start_file_name != "None"
-    #     init_step = false # => In leapfrog would NOT do damping at initital time (should use in warm start case)
-    # else
-    #     init_step = true # => In leapfrog would do damping at initital time
-    # end
+    
     
     integrator = Filtered_Leapfrog(robert_coef, 
     damping_order, damping_coef, mesh.laplacian_eig,
@@ -75,7 +70,26 @@ function Atmos_Spectral_Dynamics_Main(physcis_params::Dict{String, Float64}, obs
     num_grid_tracters = 1
     num_spe_tracters  = 1
     dyn_data = Dyn_Data(name, num_fourier, num_spherical, nλ, nθ, nd,num_grid_tracters ,num_spe_tracters) ### origin = Dyn_Data(name, num_fourier, num_spherical, nλ, nθ, nd)
-
+    # mimic warm start to implement obs_clim
+    obs_teq = obs_clim["obs_teq"]
+    if obs_teq == 1.0
+        @info "Turn on observed Climate" 
+        file_name     = "grid_Q1.dat"
+        read_file     = load(file_name) 
+        grid_Q1       = dyn_data.grid_Q1 # connect dyn_data.grid_Q1 with grid_Q1 
+        grid_Q1      .= read_file["Q1"][:,:,:]
+        file_name     = "grid_t_obs.dat"
+        read_file     = load(file_name)  # connect dyn_data.grid_t_obs with grid_t_obs
+        grid_t_obs    = dyn_data.grid_t_obs
+        grid_t_obs   .= read_file["T"][:,:,:]
+        #@info maximum(grid_t_obs)
+    else
+        grid_Q1       = dyn_data.grid_Q1
+        grid_t_obs    = dyn_data.grid_t_obs
+        @info "Turn off observed Climate" 
+    end
+    
+    
     NT = Int64(end_time / Δt)
     
     Get_Topography!(dyn_data.grid_geopots, warm_start_file_name, initial_day)
@@ -83,15 +97,14 @@ function Atmos_Spectral_Dynamics_Main(physcis_params::Dict{String, Float64}, obs
     Spectral_Initialize_Fields!(mesh, atmo_data, vert_coord, sea_level_ps_ref, init_t, dyn_data.grid_geopots, dyn_data.T_ref, dyn_data, Δt, warm_start_file_name, initial_day)
     
     
-    Atmosphere_Update!(mesh, atmo_data, vert_coord, semi_implicit, dyn_data, physcis_params, L, dyn_data.T_ref,obs_clim)
+    Atmosphere_Update!(mesh, atmo_data, vert_coord, semi_implicit, dyn_data, physcis_params, L, dyn_data.T_ref,obs_clim,grid_t_obs,grid_Q1)
     Update_Init_Step!(semi_implicit)
     integrator.time += Δt
     Update_Output!(op_man, dyn_data, integrator.time)
     
     
     for i = 2:NT
-
-        Atmosphere_Update!(mesh, atmo_data, vert_coord, semi_implicit, dyn_data, physcis_params, L, dyn_data.T_ref,obs_clim)
+        Atmosphere_Update!(mesh, atmo_data, vert_coord, semi_implicit, dyn_data, physcis_params, L, dyn_data.T_ref,obs_clim,grid_t_obs,grid_Q1)
         integrator.time += Δt
         #@info integrator.time
 

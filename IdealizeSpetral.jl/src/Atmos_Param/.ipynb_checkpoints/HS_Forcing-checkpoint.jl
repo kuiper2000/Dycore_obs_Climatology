@@ -1,5 +1,5 @@
 function HS_Forcing!(atmo_data::Atmo_Data, Δt::Int64, sinθ::Array{Float64, 1}, grid_u::Array{Float64, 3}, grid_v::Array{Float64, 3}, grid_p_half::Array{Float64, 3}, grid_p_full::Array{Float64, 3}, grid_t::Array{Float64, 3}, 
-    grid_δu::Array{Float64, 3}, grid_δv::Array{Float64, 3}, grid_t_eq::Array{Float64, 3}, grid_δt::Array{Float64, 3}, physcis_params::Dict{String, Float64},grid_t_obs::Array{Float64, 3}, grid_Q::Array{Float64, 3},obs_clim::Dict{String, Float64})
+    grid_δu::Array{Float64, 3}, grid_δv::Array{Float64, 3}, grid_t_eq::Array{Float64, 3}, grid_δt::Array{Float64, 3}, physcis_params::Dict{String, Float64},grid_t_obs::Array{Float64, 3}, grid_Q1::Array{Float64, 3},obs_clim::Dict{String, Float64})
     # reset grid_δu, grid_δv, grid_t_eq, grid_δt
     # grid_t_obs is the observed temperature profile 
     # grid_Q is the guess forcing 
@@ -31,17 +31,16 @@ function HS_Forcing!(atmo_data::Atmo_Data, Δt::Int64, sinθ::Array{Float64, 1},
     
     #thermal forcing for held & suarez (1994) benchmark calculation
     
-    Newtonian_Damping!(atmo_data, sinθ, grid_p_half, grid_p_full, grid_t, grid_t_eq, grid_δt, σ_b, k_a, k_s, ΔT_y, Δθ_z, grid_t_obs, grid_Q, obs_teq)
-
+    Newtonian_Damping!(atmo_data, sinθ, grid_p_half, grid_p_full, grid_t, grid_t_eq, grid_δt, σ_b, k_a, k_s, ΔT_y, Δθ_z, grid_t_obs, grid_Q1, obs_teq)
+    
 end 
 
 
 function Newtonian_Damping!(atmo_data::Atmo_Data, sinθ::Array{Float64,1}, grid_p_half::Array{Float64,3}, grid_p_full::Array{Float64,3}, grid_t::Array{Float64,3}, 
     grid_t_eq::Array{Float64,3}, grid_δt::Array{Float64,3}, 
-    σ_b::Float64, k_a::Float64, k_s::Float64, ΔT_y::Float64, Δθ_z::Float64,grid_t_obs::Array{Float64,3},grid_Q::Array{Float64,3}, obs_teq::Float64)
+    σ_b::Float64, k_a::Float64, k_s::Float64, ΔT_y::Float64, Δθ_z::Float64,grid_t_obs::Array{Float64,3},grid_Q1::Array{Float64,3}, obs_teq::Float64)
     
     #routine to compute thermal forcing for held & suarez (1994)
-    
     nλ, nθ, nd = size(grid_δt)
     
     day_to_sec = 86400
@@ -87,8 +86,10 @@ function Newtonian_Damping!(atmo_data::Atmo_Data, sinθ::Array{Float64,1}, grid_
         @assert(maximum(σ .- σ_b)/(1.0 - σ_b) <= 1.0)
         
         k_t .= k_a .+ (k_s - k_a)/(1.0-σ_b) * max.(0.0, σ .- σ_b) .* cosθ4_2d
-
-        grid_δt[:,:,k] .-= k_t .* (grid_t[:,:,k] - grid_t_eq[:,:,k])
+        #grid_δt[:,:,k] .-= k_t .* (grid_t[:,:,k] - grid_t_eq[:,:,k]) .* (1-obs_teq)+ k_t .* (grid_t[:,:,k] - grid_t_obs[:,:,k]) .* (obs_teq).-grid_Q1[:,:,k]*0.01
+        grid_δt[:,:,k] .-= k_t .* (grid_t[:,:,k] - grid_t_eq[:,:,k]) .* (1.0-obs_teq)+ k_t .* (grid_t[:,:,k] - grid_t_obs[:,:,k]) .* (obs_teq).-grid_Q1[:,:,k]
+        #@info maximum(grid_t_obs)
+        
         
     end
     

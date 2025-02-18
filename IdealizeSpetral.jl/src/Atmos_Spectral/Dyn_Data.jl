@@ -150,7 +150,7 @@ mutable struct Dyn_Data
 
     # equilibrium obs climatological T and Q_N (see Chang 2006)
     grid_t_obs::Array{Float64,3}
-    grid_Q::Array{Float64,3}
+    grid_Q1::Array{Float64,3}
     
     
     ## wrapper
@@ -302,7 +302,7 @@ function Dyn_Data(name::String, num_fourier::Int64, num_spherical::Int64, nλ::I
 
     # equilibrium obs climatological T and Q_N (see Chang 2006)
     grid_t_obs = zeros(Float64, nλ,  nθ, nd)
-    grid_Q     = zeros(Float64, nλ,  nθ, nd)
+    grid_Q1    = zeros(Float64, nλ,  nθ, nd)
     
     ## wrapper
     spe_d1 = zeros(ComplexF64, num_fourier+1, num_spherical+1, nd)
@@ -358,7 +358,7 @@ function Dyn_Data(name::String, num_fourier::Int64, num_spherical::Int64, nλ::I
     grid_w_full, grid_M_half,
     spe_energy, grid_energy_full, 
     grid_geopots, grid_geopot_full, grid_geopot_half,
-    grid_z_full, grid_z_half,grid_t_eq, grid_t_obs, grid_Q,
+    grid_z_full, grid_z_half,grid_t_eq, grid_t_obs, grid_Q1,
     #########################################################################
     spe_d1, spe_d2, grid_d_full1, grid_d_full2, grid_d_half1, grid_d_half2,
     factor1, factor2, factor3, factor4, K_E, convection, T_ref, grid_tracers_c_max_Tiffany, grid_tracers_c_max)

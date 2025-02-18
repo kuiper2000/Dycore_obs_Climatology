@@ -383,7 +383,7 @@ function Spectral_Dynamics!(mesh::Spectral_Spherical_Mesh,  vert_coord::Vert_Coo
     # print for checking
     day_to_sec = 86400
     if (integrator.time%(day_to_sec/4) == 0)
-        @info "Day: ", (integrator.time/ day_to_sec), " Max |U|,|V|,|P|,|T|,|qv|: ", maximum(abs.(dyn_data.grid_u_c)), maximum(abs.(dyn_data.grid_v_c)), maximum(dyn_data.grid_p_full), maximum(dyn_data.grid_t_c), maximum(dyn_data.grid_tracers_c), maximum(dyn_data.grid_tracers_diff)
+        #@info "Day: ", (integrator.time/ day_to_sec), " Max |U|,|V|,|P|,|T|,|qv|: ", maximum(abs.(dyn_data.grid_u_c)), maximum(abs.(dyn_data.grid_v_c)), maximum(dyn_data.grid_p_full), maximum(dyn_data.grid_t_c), maximum(dyn_data.grid_tracers_c), maximum(dyn_data.grid_tracers_diff)
         @info "Day: ", (integrator.time/ day_to_sec), " Min |U|,|V|,|P|,|T|,|qv|: ", minimum(abs.(dyn_data.grid_u_c)), minimum(abs.(dyn_data.grid_v_c)), minimum(dyn_data.grid_p_full), minimum(dyn_data.grid_t_c), minimum(dyn_data.grid_tracers_c)
     end
 
@@ -609,14 +609,14 @@ function Spectral_Initialize_Fields!(mesh::Spectral_Spherical_Mesh, atmo_data::A
 end 
 
 
-function Spectral_Dynamics_Physics!(semi_implicit::Semi_Implicit_Solver, atmo_data::Atmo_Data, mesh::Spectral_Spherical_Mesh, dyn_data::Dyn_Data, Δt::Int64, physics_params::Dict{String, Float64}, L::Float64, T_ref::Array{Float64, 3},obs_clim::Dict{String, Float64})
+function Spectral_Dynamics_Physics!(semi_implicit::Semi_Implicit_Solver, atmo_data::Atmo_Data, mesh::Spectral_Spherical_Mesh, dyn_data::Dyn_Data, Δt::Int64, physics_params::Dict{String, Float64}, L::Float64, T_ref::Array{Float64, 3},obs_clim::Dict{String, Float64},grid_t_obs::Array{Float64, 3},grid_Q1::Array{Float64, 3})
     grid_δu, grid_δv, grid_δps, grid_δt = dyn_data.grid_δu, dyn_data.grid_δv, dyn_data.grid_δps, dyn_data.grid_δt
     grid_u_p, grid_v_p,  grid_t_p       = dyn_data.grid_u_p, dyn_data.grid_v_p, dyn_data.grid_t_p
     grid_p_half, grid_p_full            = dyn_data.grid_p_half, dyn_data.grid_p_full
     grid_t_eq                           = dyn_data.grid_t_eq
     # Chang 2006's project 
     grid_t_obs                          = dyn_data.grid_t_obs
-    grid_Q                              = dyn_data.grid_Q            
+    grid_Q1                             = grid_Q1         
 
     grid_δtracers                       = dyn_data.grid_δtracers
     spe_δtracers                        = dyn_data.spe_δtracers
@@ -767,15 +767,15 @@ function Spectral_Dynamics_Physics!(semi_implicit::Semi_Implicit_Solver, atmo_da
         Trans_Spherical_To_Grid!(mesh, spe_tracers_c, grid_tracers_c)
     end
     ######################################################################################################
-    HS_Forcing!(atmo_data, Δt, mesh.sinθ, grid_u_p, grid_v_p, grid_p_half, grid_p_full, grid_t_p, grid_δu, grid_δv, grid_t_eq, grid_δt, physics_params,grid_t_obs,grid_Q, obs_clim)
+    HS_Forcing!(atmo_data, Δt, mesh.sinθ, grid_u_p, grid_v_p, grid_p_half, grid_p_full, grid_t_p, grid_δu, grid_δv, grid_t_eq, grid_δt, physics_params,grid_t_obs,grid_Q1, obs_clim)
     
 end
 
 
-function Atmosphere_Update!(mesh::Spectral_Spherical_Mesh, atmo_data::Atmo_Data, vert_coord::Vert_Coordinate, semi_implicit::Semi_Implicit_Solver, dyn_data::Dyn_Data, physcis_params::Dict{String, Float64}, L::Float64, T_ref::Array{Float64, 3},obs_clim::Dict{String, Float64})
+function Atmosphere_Update!(mesh::Spectral_Spherical_Mesh, atmo_data::Atmo_Data, vert_coord::Vert_Coordinate, semi_implicit::Semi_Implicit_Solver, dyn_data::Dyn_Data, physcis_params::Dict{String, Float64}, L::Float64, T_ref::Array{Float64, 3},obs_clim::Dict{String, Float64},grid_t_obs::Array{Float64, 3},grid_Q1::Array{Float64, 3})
 
     Δt = Get_Δt(semi_implicit.integrator)
-    Spectral_Dynamics_Physics!(semi_implicit, atmo_data, mesh,  dyn_data, Δt, physcis_params, L, T_ref,obs_clim) # HS forcing
+    Spectral_Dynamics_Physics!(semi_implicit, atmo_data, mesh,  dyn_data, Δt, physcis_params, L, T_ref,obs_clim,grid_t_obs,grid_Q1) # HS forcing
     Spectral_Dynamics!(mesh,  vert_coord , atmo_data, dyn_data, semi_implicit, L) # dynamics 
 
     grid_ps , grid_Δp, grid_p_half, grid_lnp_half, grid_p_full, grid_lnp_full = dyn_data.grid_ps_c,  dyn_data.grid_Δp, dyn_data.grid_p_half, dyn_data.grid_lnp_half, dyn_data.grid_p_full, dyn_data.grid_lnp_full 
