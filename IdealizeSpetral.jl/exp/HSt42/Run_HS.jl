@@ -16,7 +16,7 @@ path = "HSt42_" * L_int * "/"
 touch(path * "day_interval.txt")
 file       = open(path * "day_interval.txt", "r")
 data       = read(file, String)
-end_day    = parse(Int64, data)
+end_day    = parse(Int64, data) # the duration of each run, which is 25 days now.
 spinup_day = 0
 close(file)
 ### load first day file name ###
@@ -27,6 +27,12 @@ firstday             = read(firstday_file, String)
 warm_start_file_name =  firstday 
 initial_day          =  end_day   # In this version, it would start at the final day of the warmstart.dat
 close(firstday_file)
+
+# touch("obs_theta/iteration.txt")
+# iteration_file  = open("obs_theta/iteration.txt", "r")
+# iteration_int   = chomp(read(iteration_file, String))
+# @info "iteration:", chomp(iteration_int)
+# close(iteration_int)
 
 # Held Suarez setup 
 physics_params = Dict{String,Float64}("σ_b"=>0.7, "k_f" => 1.0, "k_a" => 1.0/40.0, "k_s" => 1.0/4.0, "ΔT_y" => 60.0, "Δθ_z" => 10.0) 

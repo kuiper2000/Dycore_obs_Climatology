@@ -4,7 +4,7 @@ This script is designed for long-duration simulations, producing output results 
 """
 
 start_day=0
-final_day=50
+final_day=500
 space_day=25
 
 for i in `seq $start_day $space_day $final_day`
